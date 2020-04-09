@@ -34,5 +34,10 @@ module NPC_Generator(
     );
 
     // TODO: Complete this module
+    always@(*)
+    begin
+       NPC = (br == 1'b1) ? br_target : (jalr == 1'b1) ? jalr_target : (jal == 1'b1) ? jal_target : PC;
+    end
+    
 
 endmodule

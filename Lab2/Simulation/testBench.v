@@ -12,10 +12,10 @@
 // !!! ALL YOU NEED TO CHANGE IS 4 FILE PATH BELOW !!!	
 //				(they are all optional, you can run cpu without change paths here,if files are failed to open, we will not dump the content to .txt and will not try to initial your bram)
 //////////////////////////////////////////////////////////////////////////////////
-`define DataCacheContentLoadPath "E:\\Code\\Simulation\\2testAll.data"
-`define InstCacheContentLoadPath "E:\\Code\\Simulation\\2testAll.inst"
-`define DataCacheContentSavePath "E:\\Code\\Simulation\\DataCacheContent.txt"
-`define InstCacheContentSavePath "E:\\Code\\Simulation\\InstCacheContent.txt"
+`define DataCacheContentLoadPath "/home/ubuntu/yangjiaxi/ca_lab2/ustc_ca2020_lab/Lab2/Simulation/3testAll.data"
+`define InstCacheContentLoadPath "/home/ubuntu/yangjiaxi/ca_lab2/ustc_ca2020_lab/Lab2/Simulation/3testAll.inst"
+`define DataCacheContentSavePath "/home/ubuntu/yangjiaxi/ca_lab2/ustc_ca2020_lab/Lab2/Simulation/DataCacheContent3.txt"
+`define InstCacheContentSavePath "/home/ubuntu/yangjiaxi/ca_lab2/ustc_ca2020_lab/Lab2/Simulation/InstCacheContent3.txt"
 `define BRAMWORDS 4096  //a word is 32bit, so our bram is 4096*32bit
 
 module testBench(
@@ -56,6 +56,7 @@ module testBench(
     //
     initial 
     begin
+    $display("1234"); 
         $display("Initialing reg values..."); 
         CPU_Debug_DataCache_WD2 = 32'b0;
         CPU_Debug_DataCache_WE2 = 4'b0;

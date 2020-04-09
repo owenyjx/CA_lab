@@ -64,4 +64,127 @@ module HarzardUnit(
 
     // TODO: Complete this module
 
+    always@(*)
+    begin
+        if(rst == 1'b1)
+        begin
+            flushF = 1'b1;
+            bubbleF = 1'b0;
+            flushD = 1'b1;
+            bubbleD = 1'b0;
+            flushE = 1'b1;
+            bubbleE = 1'b0;
+            flushM = 1'b1;
+            bubbleM = 1'b0;
+            flushW = 1'b1;
+            bubbleW = 1'b0;
+        end
+        else if((src_reg_en[1] == 1'b1 && reg1_srcD == reg_dstE && reg1_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1) || (src_reg_en[0] == 1'b1 && reg2_srcD == reg_dstE && reg2_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1))
+        begin
+            flushF = 1'b0;
+            bubbleF = 1'b1;
+            flushD = 1'b0;
+            bubbleD = 1'b1;
+            flushE = 1'b0;
+            bubbleE = 1'b0;
+            flushM = 1'b0;
+            bubbleM = 1'b0;
+            flushW = 1'b0;
+        end
+        else if(jalr == 1'b1 || br == 1'b1)
+        begin
+            flushF = 1'b0;
+            bubbleF = 1'b0;
+            flushD = 1'b1;
+            bubbleD = 1'b0;
+            flushE = 1'b1;
+            bubbleE = 1'b0;
+            flushM = 1'b0;
+            bubbleM = 1'b0;
+            flushW = 1'b0;
+            bubbleW = 1'b0;
+        end
+        else if(jal == 1'b1)
+        begin
+            flushF = 1'b0;
+            bubbleF = 1'b0;
+            flushD = 1'b1;
+            bubbleD = 1'b0;
+            flushE = 1'b0;
+            bubbleE = 1'b0;
+            flushM = 1'b0;
+            bubbleM = 1'b0;
+            flushW = 1'b0;
+            bubbleW = 1'b0;
+        end
+        else 
+        begin
+            flushF = 1'b0;
+            bubbleF = 1'b0;
+            flushD = 1'b0;
+            bubbleD = 1'b0;
+            flushE = 1'b0;
+            bubbleE = 1'b0;
+            flushM = 1'b0;
+            bubbleM = 1'b0;
+            flushW = 1'b0;
+            bubbleW = 1'b0;
+        end
+    end
+
+    always@(*)
+    begin
+        if(rst == 1'b1)
+        begin
+            op1_sel = 2'b11;
+            op2_sel = 2'b11;
+            reg2_sel = 2'b00;
+        end
+        else 
+        begin
+        if(src_reg_en[1] == 1'b1 && reg1_srcD == reg_dstE && reg1_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1)
+        begin
+            op1_sel = op1_sel;
+        end
+        else if(src_reg_en[1] == 1'b1 && reg1_srcE == reg_dstM && reg_write_en_MEM == 1'b1 && reg1_srcE != 5'b0)
+        begin
+            op1_sel = (alu_src1 == 1'b1) ? 2'b10 : 2'b00;
+        end
+        else if(src_reg_en[1] == 1'b1 && reg1_srcE == reg_dstW && reg_write_en_WB == 1'b1 && reg1_srcE != 5'b0)
+        begin
+            op1_sel = (alu_src1 == 1'b1) ? 2'b10 : 2'b01;
+        end
+        else 
+        begin
+            op1_sel = (alu_src1 == 1'b1) ? 2'b10 : 2'b11;
+        end
+
+        if(src_reg_en[0] == 1'b1 && reg2_srcD == reg_dstE && reg2_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1)
+        begin
+            op2_sel = op2_sel;
+            reg2_sel = reg2_sel;
+        end
+        else if(src_reg_en[0] == 1'b1 && reg2_srcE == reg_dstM && reg_write_en_MEM == 1'b1 && reg2_srcE != 5'b0)
+        begin
+            op2_sel = (alu_src2 == 2'b10) ? 2'b11:(alu_src2 == 2'b01)? 2'b10: 2'b00;
+            //op2_sel = (alu_src2 == 2'b10) ? 2'b11 : 2'b00;
+            reg2_sel = 2'b00;
+        end
+        else if(src_reg_en[0] == 1'b1 && reg2_srcE == reg_dstW && reg_write_en_WB == 1'b1 && reg2_srcE != 5'b0)
+        begin
+            op2_sel = (alu_src2 == 2'b10) ? 2'b11:(alu_src2 == 2'b01)? 2'b10:2'b01;
+            //op2_sel = (alu_src2 == 2'b10) ? 2'b11 : 2'b01;
+            reg2_sel = 2'b01;
+        end
+        else 
+        begin
+            op2_sel = (alu_src2 == 2'b01) ? 2'b10:2'b11;
+            reg2_sel = 2'b10;
+        end
+
+        end
+    end
+
+
+
 endmodule

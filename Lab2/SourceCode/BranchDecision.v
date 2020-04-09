@@ -28,7 +28,18 @@ module BranchDecision(
     input wire [2:0] br_type,
     output reg br
     );
-
+    always@(*)
+    begin
+        case(br_type)
+            `NOBRANCH: br = 1'd0;
+            `BEQ: br = (reg1 == reg2) ? 1:0;
+            `BNE: br = (reg1 != reg2) ? 1:0;
+            `BLT: br = ($signed(reg1) < $signed(reg2)) ? 1:0;
+            `BLTU: br = ($unsigned(reg1) < $unsigned(reg2)) ? 1:0;
+            `BGE: br = ($signed(reg1) >= $signed(reg2)) ? 1:0;
+            `BGEU: br = ($unsigned(reg1) >= $unsigned(reg2)) ? 1:0;
+        endcase
+    end
     // TODO: Complete this module
 
 endmodule

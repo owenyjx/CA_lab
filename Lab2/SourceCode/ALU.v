@@ -30,6 +30,23 @@ module ALU(
     );
 
     // TODO: Complete this module
+    always@(*)
+    begin
+        case(ALU_func)
+            `SLL: ALU_out = op1 << op2[4:0];
+            `SRL: ALU_out = op1 >> op2[4:0];
+            `SRA: ALU_out =  ( {32{op1[31]}} << ( 6'd32 - {1'b0, op2[4:0]} ) ) | ( op1 >> op2[4:0] ) ;
+            `ADD: ALU_out = $signed(op1) + $signed(op2);
+            `SUB: ALU_out = $signed(op1) - $signed(op2);
+            `XOR: ALU_out = op1 ^ op2;
+            `OR: ALU_out = op1 | op2;
+            `AND: ALU_out = op1 & op2;
+            `SLT: ALU_out = ($signed(op1) < $signed(op2)) ? 1 : 0;
+            `SLTU: ALU_out = ($unsigned(op1) < $unsigned(op2)) ? 1 : 0;
+            `LUI: ALU_out = op2;
+            default: ;
+        endcase 
+    end
 
 endmodule
 
