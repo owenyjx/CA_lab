@@ -46,7 +46,7 @@ module RV32ICore(
     wire op2_src;
     wire [3:0] ALU_func_ID, ALU_func_EX;
     wire [2:0] br_type_ID, br_type_EX;
-    wire load_npc_ID, load_npc_EX;
+    wire [1:0] load_npc_ID, load_npc_EX;
     wire wb_select_ID, wb_select_EX, wb_select_MEM;
     wire [2:0] load_type_ID, load_type_EX, load_type_MEM;
     wire [1:0] src_reg_en_ID, src_reg_en_EX;
@@ -59,6 +59,15 @@ module RV32ICore(
     wire [31:0] dealt_reg2;
     wire [31:0] result, result_MEM;
     wire [1:0] op1_sel, op2_sel, reg2_sel;
+
+    wire [31:0] csr_op1_ID, csr_op1_EX, csr_op1_MEM, csr_op1_WB, csr_ALU_out;
+    wire [31:0] csr_ALU_out_EX, csr_ALU_out_MEM, csr_ALU_out_WB;
+    wire [31:0] csr_op2_ID, csr_op2_EX, csr_op2_MEM, csr_op2_WB;
+    wire [31:0] csr_imm;
+    wire [31:0] csr_data_WB;
+    wire csr_reg_write_en_ID, csr_reg_write_en_EX, csr_reg_write_en_MEM, csr_reg_write_en_WB;
+    wire [11:0] csr_addr_dest_ID, csr_addr_dest_EX, csr_addr_dest_MEM, csr_addr_dest_WB;
+    wire [2:0] csr_ALU_func_ID, csr_ALU_func_EX, csr_ALU_func_MEM, csr_ALU_func_WB;
 
 
 
@@ -86,8 +95,11 @@ module RV32ICore(
 
 
     // MUX for result (ALU or PC_EX)
-    assign result = load_npc_EX ? PC_EX : ALU_out;
+    assign result = (load_npc_EX == 2'b11) ? csr_op1_EX : (load_npc_EX == 1) ? PC_EX : ALU_out;
 
+    assign csr_op2_ID = (inst[14:12] == 3'b101 || inst[14:12] == 3'b110 || inst[14:12] == 3'b111) ? {{27{1'b0}}, inst[11:7]} : reg1;
+    assign csr_reg_write_en_ID = 1;
+    assign csr_ALU_func_ID = (inst[14:12] == 3'b001) ? 0 : (inst[14:12] == 3'b010) ? 1 : (inst[14:12] == 3'b011) ? 2 : (inst[14:12] == 3'b101) ? 3 : (inst[14:12] == 3'b110) ? 4 : 5 
 
 
     //Module connections
@@ -161,6 +173,17 @@ module RV32ICore(
         .reg1(reg1),
         .reg2(reg2)
     );
+
+    //加入特殊寄存器
+    CSRRegisterFile CSRRegisterFile1(
+        .clk(CPU_CLK),
+        .rst(CPU_RST),
+        .csr_write_en(csr_reg_write_en_WB),
+        .csr_addr(inst[31:20]),
+        .csr_wb_data(csr_ALU_out_WB),
+        .csr_wb_addr(csr_addr_dest_WB),
+        .csr_out(csr_op1_ID)
+    )
 
 
     ControllerDecoder ControllerDecoder1(
@@ -271,6 +294,26 @@ module RV32ICore(
     );
 
 
+    //load type负责rd目标寄存器的赋值，通过改变之前的代码，rd的目标地址也不需要新加。
+    Csr_EX Csr_EX1(
+    .clk(CPU_CLK),
+    .bubbleE(bubbleE),
+    .flushE(flushE),
+    .csr_addr_ID(inst[31:20]),
+    .csr_addr_EX(csr_addr_dest_EX),
+    .csr_reg_write_en_ID(csr_reg_write_en_ID),
+    .csr_ALU_func_ID(csr_ALU_func_ID),
+    .csr_ALU_func_EX(csr_ALU_func_EX),
+    .csr_reg_write_en_EX(csr_reg_write_en_EX),
+    .reg1(csr_op1_ID),
+    .reg2(csr_op2_ID),
+    .reg1_EX(csr_op1_EX),
+    .reg2_EX(csr_op2_EX)
+    );
+
+
+
+
     // ---------------------------------------------
     // EX stage
     // ---------------------------------------------
@@ -330,7 +373,26 @@ module RV32ICore(
         .cache_write_en_MEM(cache_write_en_MEM)
     );
 
+    //新加入一个ALU模块，和流水段模块
+    CSR_ALU CSR_ALU1(
+        .op1(csr_op1_EX),
+        .op2(csr_op2_EX),
+        .ALU_func(csr_ALU_func_EX),
+        .ALU_out(ALU_out)
+    );
 
+
+    Csr_MEM Csr_MEM1(
+    .clk(CPU_CLK),
+    .bubbleM(bubbleM),
+    .flushM(flushM),
+    .csr_addr_EX(csr_addr_dest_EX),
+    .csr_addr_MEM(csr_addr_dest_MEM),
+    .csr_reg_write_en_EX(csr_reg_write_en_EX),
+    .csr_reg_write_en_MEM(csr_reg_write_en_MEM),
+    .out_EX(csr_ALU_out_EX),
+    .out_MEM(csr_ALU_out_MEM)
+    );
 
     // ---------------------------------------------
     // MEM stage
@@ -369,7 +431,19 @@ module RV32ICore(
         .reg_write_en_MEM(reg_write_en_MEM),
         .reg_write_en_WB(reg_write_en_WB)
     );
-
+    
+    //新加入了流水段
+    Csr_WB Csr_WB1(
+    .clk(CPU_CLK),
+    .bubbleM(bubbleW),
+    .flushM(flushW),
+    .csr_addr_MEM(csr_addr_dest_MEM),
+    .csr_addr_WB(csr_addr_dest_WB),
+    .csr_reg_write_en_MEM(csr_reg_write_en_MEM),
+    .csr_reg_write_en_WB(csr_reg_write_en_WB),
+    .out_MEM(csr_ALU_out_MEM),
+    .out_WB(csr_ALU_out_WB)
+    );
 
     // ---------------------------------------------
     // WB stage

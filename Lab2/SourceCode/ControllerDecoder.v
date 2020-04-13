@@ -40,7 +40,7 @@ module ControllerDecoder(
     output wire op2_src,
     output reg [3:0] ALU_func,
     output reg [2:0] br_type,
-    output wire load_npc,
+    output wire [1:0]load_npc,
     output wire wb_select,
     output reg [2:0] load_type,
     output reg [1:0] src_reg_en,
@@ -194,7 +194,7 @@ module ControllerDecoder(
     begin
         //reg_write_en ?????????reg_write_en == 1??????reg
         
-        if(inst[6:0] == 7'b1100011 || inst[6:0] == 7'b0100011) 
+        if(inst[6:0] == 7'b1100011 || inst[6:0] == 7'b0100011 || inst[6:0] = 7'b1110011) //加入csr写入寄存器使能
         begin
             reg_write_en = 1'b0; 
         end
@@ -293,7 +293,7 @@ module ControllerDecoder(
     assign op2_src = (inst[6:0] == 7'b0110011)? 1'b0:1'b1; 
 
     //when jal,jajr
-    assign load_npc = (inst[6:0] == 7'b1101111 || inst[6:0] == 7'b1100111)? 1'b1:1'b0; 
+    assign load_npc = (inst[6:0] == 7'b1110011) ? 2'b11 : (inst[6:0] == 7'b1101111 || inst[6:0] == 7'b1100111)? 1: 0; //加入csr指令
 
     //when sw,sh,sb
     assign wb_select = (inst[6:0] == 7'b0000011)? 1'b1:1'b0;
