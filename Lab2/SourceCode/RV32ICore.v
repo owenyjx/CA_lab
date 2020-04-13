@@ -96,11 +96,12 @@ module RV32ICore(
 
     // MUX for result (ALU or PC_EX)
     assign result = (load_npc_EX == 2'b11) ? csr_op1_EX : (load_npc_EX == 1) ? PC_EX : ALU_out;
+    // assign result = (load_npc_EX == 1) ? PC_EX : ALU_out;
 
-    assign csr_op2_ID = (inst[14:12] == 3'b101 || inst[14:12] == 3'b110 || inst[14:12] == 3'b111) ? {{27{1'b0}}, inst[11:7]} : reg1;
+    assign csr_op2_ID = (inst_ID[14:12] == 3'b101 || inst_ID[14:12] == 3'b110 || inst_ID[14:12] == 3'b111) ? {{27{1'b0}}, inst_ID[19:15]} : reg1;
     assign csr_reg_write_en_ID = 1;
-    assign csr_ALU_func_ID = (inst[14:12] == 3'b001) ? 0 : (inst[14:12] == 3'b010) ? 1 : (inst[14:12] == 3'b011) ? 2 : (inst[14:12] == 3'b101) ? 3 : (inst[14:12] == 3'b110) ? 4 : 5 
-
+    assign csr_ALU_func_ID = (inst_ID[14:12] == 3'b001) ? 0 : (inst_ID[14:12] == 3'b010) ? 1 : (inst_ID[14:12] == 3'b011) ? 2 : (inst_ID[14:12] == 3'b101) ? 3 : (inst_ID[14:12] == 3'b110) ? 4 : 5 ;
+    assign csr_addr_dest_ID = inst_ID[31:20];
 
     //Module connections
     // ---------------------------------------------
@@ -179,11 +180,11 @@ module RV32ICore(
         .clk(CPU_CLK),
         .rst(CPU_RST),
         .csr_write_en(csr_reg_write_en_WB),
-        .csr_addr(inst[31:20]),
+        .csr_addr(inst_ID[31:20]),
         .csr_wb_data(csr_ALU_out_WB),
         .csr_wb_addr(csr_addr_dest_WB),
         .csr_out(csr_op1_ID)
-    )
+    );
 
 
     ControllerDecoder ControllerDecoder1(
@@ -299,14 +300,14 @@ module RV32ICore(
     .clk(CPU_CLK),
     .bubbleE(bubbleE),
     .flushE(flushE),
-    .csr_addr_ID(inst[31:20]),
+    .csr_addr_ID(inst_ID[31:20]),
     .csr_addr_EX(csr_addr_dest_EX),
     .csr_reg_write_en_ID(csr_reg_write_en_ID),
     .csr_ALU_func_ID(csr_ALU_func_ID),
     .csr_ALU_func_EX(csr_ALU_func_EX),
     .csr_reg_write_en_EX(csr_reg_write_en_EX),
-    .reg1(csr_op1_ID),
-    .reg2(csr_op2_ID),
+    .reg1_ID(csr_op1_ID),
+    .reg2_ID(csr_op2_ID),
     .reg1_EX(csr_op1_EX),
     .reg2_EX(csr_op2_EX)
     );
@@ -378,7 +379,7 @@ module RV32ICore(
         .op1(csr_op1_EX),
         .op2(csr_op2_EX),
         .ALU_func(csr_ALU_func_EX),
-        .ALU_out(ALU_out)
+        .ALU_out(csr_ALU_out_EX)
     );
 
 
@@ -435,8 +436,8 @@ module RV32ICore(
     //新加入了流水段
     Csr_WB Csr_WB1(
     .clk(CPU_CLK),
-    .bubbleM(bubbleW),
-    .flushM(flushW),
+    .bubbleW(bubbleW),
+    .flushW(flushW),
     .csr_addr_MEM(csr_addr_dest_MEM),
     .csr_addr_WB(csr_addr_dest_WB),
     .csr_reg_write_en_MEM(csr_reg_write_en_MEM),

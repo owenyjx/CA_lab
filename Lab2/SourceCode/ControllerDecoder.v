@@ -194,7 +194,7 @@ module ControllerDecoder(
     begin
         //reg_write_en ?????????reg_write_en == 1??????reg
         
-        if(inst[6:0] == 7'b1100011 || inst[6:0] == 7'b0100011 || inst[6:0] = 7'b1110011) //加入csr写入寄存器使能
+        if(inst[6:0] == 7'b1100011 || inst[6:0] == 7'b0100011 ) 
         begin
             reg_write_en = 1'b0; 
         end
@@ -294,6 +294,7 @@ module ControllerDecoder(
 
     //when jal,jajr
     assign load_npc = (inst[6:0] == 7'b1110011) ? 2'b11 : (inst[6:0] == 7'b1101111 || inst[6:0] == 7'b1100111)? 1: 0; //加入csr指令
+    // assign load_npc = (inst[6:0] == 7'b1101111 || inst[6:0] == 7'b1100111)? 2'b01: 2'b00; //加入csr指令
 
     //when sw,sh,sb
     assign wb_select = (inst[6:0] == 7'b0000011)? 1'b1:1'b0;

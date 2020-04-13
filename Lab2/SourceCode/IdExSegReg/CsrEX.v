@@ -52,17 +52,21 @@ module Csr_EX(
         if (!bubbleE) 
         begin
             if (flushE)
+            begin
                 reg1_EX <= 0;
                 reg2_EX <= 0;
                 csr_reg_write_en_EX = 0;
                 csr_addr_EX = 0;
                 csr_ALU_func_EX = 0;
+            end
             else 
-                reg1_EX <= reg1;
-                reg2_EX <= reg2;
+            begin
+                reg1_EX <= reg1_ID;
+                reg2_EX <= reg2_ID;
                 csr_reg_write_en_EX = csr_reg_write_en_ID;
                 csr_addr_EX = csr_addr_ID;
                 csr_ALU_func_EX = csr_ALU_func_ID;
+            end
         end
     
 endmodule

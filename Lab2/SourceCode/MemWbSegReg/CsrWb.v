@@ -46,13 +46,17 @@ module Csr_WB(
         if (!bubbleW) 
         begin
             if (flushW)
+            begin
                 csr_reg_write_en_WB = 0;
                 csr_addr_WB = 0;
                 out_WB = 0;
+            end
             else 
+            begin
                 csr_reg_write_en_WB = csr_reg_write_en_MEM;
                 csr_addr_WB = csr_addr_MEM;
                 out_WB = out_MEM;
+            end
         end
     
 endmodule

@@ -29,7 +29,7 @@ module ImmExtend(
 
     always@(*)
     begin
-        imm = {{27{1'b0}}, inst[11:7]}
+        imm = {{27{1'b0}}, inst[11:7]};
     end
     
 endmodule

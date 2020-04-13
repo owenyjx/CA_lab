@@ -64,7 +64,7 @@ module CSRRegisterFile(
     end
 
     // read data changes when address changes
-    assign csr_out = reg_file[csr_addr];
+    assign csr_out = csr_reg_file[csr_addr];
 
 
 

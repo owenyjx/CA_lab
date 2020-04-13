@@ -46,13 +46,17 @@ module Csr_MEM(
         if (!bubbleM) 
         begin
             if (flushM)
+            begin
                 csr_reg_write_en_MEM = 0;
                 csr_addr_MEM = 0;
                 out_MEM = 0;
+            end
             else 
+            begin
                 csr_reg_write_en_MEM = csr_reg_write_en_EX;
                 csr_addr_MEM = csr_addr_EX;
                 out_MEM = out_EX;
+            end
         end
     
 endmodule
