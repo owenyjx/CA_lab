@@ -4,7 +4,9 @@ module cache #(
     parameter  LINE_ADDR_LEN = 3, // line内地址长度，决定了每个line具有2^3个word
     parameter  SET_ADDR_LEN  = 3, // 组地址长度，决定了一共有2^3=8组
     parameter  TAG_ADDR_LEN  = 6, // tag长度
-    parameter  WAY_CNT       = 3  // 组相连度，决定了每组中有多少路line，这里是直接映射型cache，因此该参数没用到
+    parameter  WAY_CNT       = 3, // 组相连度，决定了每组中有多少路line，这里是直接映射型cache，因此该参数没用到
+    parameter  LRU           = 1, //LRU策略   
+    parameter  FIFO          = 0  //FIFO策略
 )(
     input  clk, rst,
     output miss,               // 对CPU发出的miss信号
@@ -21,10 +23,11 @@ localparam UNUSED_ADDR_LEN = 32 - TAG_ADDR_LEN - SET_ADDR_LEN - LINE_ADDR_LEN - 
 localparam LINE_SIZE       = 1 << LINE_ADDR_LEN  ;         // 计算 line 中 word 的数量，即 2^LINE_ADDR_LEN 个word 每 line
 localparam SET_SIZE        = 1 << SET_ADDR_LEN   ;         // 计算一共有多少组，即 2^SET_ADDR_LEN 个组
 
-reg [            31:0] cache_mem    [SET_SIZE][LINE_SIZE]; // SET_SIZE个line，每个line有LINE_SIZE个word
-reg [TAG_ADDR_LEN-1:0] cache_tags   [SET_SIZE];            // SET_SIZE个TAG
-reg                    valid        [SET_SIZE];            // SET_SIZE个valid(有效位)
-reg                    dirty        [SET_SIZE];            // SET_SIZE个dirty(脏位)
+//加入每一组路数的维度
+reg [            31:0] cache_mem    [SET_SIZE][WAY_CNT][LINE_SIZE]; // SET_SIZE个line，每个line有LINE_SIZE个word
+reg [TAG_ADDR_LEN-1:0] cache_tags   [SET_SIZE][WAY_CNT];            // SET_SIZE个TAG
+reg                    valid        [SET_SIZE][WAY_CNT];            // SET_SIZE个valid(有效位)
+reg                    dirty        [SET_SIZE][WAY_CNT];            // SET_SIZE个dirty(脏位)
 
 wire [              2-1:0]   word_addr;                   // 将输入地址addr拆分成这5个部分
 wire [  LINE_ADDR_LEN-1:0]   line_addr;
@@ -47,21 +50,82 @@ wire mem_gnt;      // 主存响应读写的握手信号
 
 assign {unused_addr, tag_addr, set_addr, line_addr, word_addr} = addr;  // 拆分 32bit ADDR
 
+wire machanism; //用作选择替换策略
+assign machanism = FIFO;
 reg cache_hit = 1'b0;
-always @ (*) begin              // 判断 输入的address 是否在 cache 中命中
-    if(valid[set_addr] && cache_tags[set_addr] == tag_addr)   // 如果 cache line有效，并且tag与输入地址中的tag相等，则命中
-        cache_hit = 1'b1;
-    else
-        cache_hit = 1'b0;
+reg way = 32'b0;
+reg out_way = 32'b0; //用作确定换出的路
+reg [            WAY_CNT-1:0] FIFO_ways    [SET_SIZE]; //用来记录先后顺序
+reg [            WAY_CNT-1:0] LRU_ways    [SET_SIZE];
+int unsigned FIFO_Q[$:WAY_CNT];
+
+//加入并行判断，判断命中的是第几路
+always@ (*)
+begin
+    cache_hit = 1'b0; 
+    for(integer j = 0; j < WAY_CNT; j++) begin
+        if(cache_tags[set_addr][j] == tag_addr && valid[set_addr][j])
+            begin
+                way = j;
+                cache_hit = 1'b1;
+            end
+    end
 end
 
+//always @ (*) begin              // 判断 输入的address 是否在 cache 中命中
+//    if(valid[set_addr] && cache_tags[set_addr] == tag_addr)   // 如果 cache line有效，并且tag与输入地址中的tag相等，则命中
+//        cache_hit = 1'b1;
+//    else
+//        cache_hit = 1'b0;
+//end
+always @ (*)
+begin
+    if(rst) begin
+        FIFO_Q.delete();
+        for(integer i = 0; i < SET_SIZE; i++) begin 
+            FIFO_ways[i] = 0;
+            LRU_ways[i]= 0;
+        end
+    end
+    else if(machanism == FIFO && !cache_hit && (wr_req | rd_req) ) begin
+        FIFO_ways[set_addr] = (FIFO_ways[set_addr] + 1) % WAY_CNT;
+    end
+    else if(machanism == LRU && cache_hit) begin
+        LRU_ways[set_addr] = LRU_ways[set_addr] | (1 << way);
+        if(~LRU_ways[set_addr] == 0)
+            LRU_ways[set_addr] = (1 << way);
+    end
+end
+
+always @ (*)
+begin
+    if(rst) begin
+        way_out = 0;
+    end 
+    else if(machanism == FIFO) begin
+        way_out = FIFO_ways[set_addr]
+    end
+    else if(machanism == LRU) begin
+        for(integer i = 0; i < SET_SIZE; i++) begin
+            if(LRU_ways[set_addr] & (1 << i) == 0) begin
+                way_out = i;
+                break;
+            end
+        end
+    end
+end
+
+//加入并行和策略替换
 always @ (posedge clk or posedge rst) begin     // ?? cache ???
     if(rst) begin
         cache_stat <= IDLE;
         for(integer i = 0; i < SET_SIZE; i++) begin
-            dirty[i] = 1'b0;
-            valid[i] = 1'b0;
+            for(integer m = 0; m < WAY_CNT; m++) begin
+                dirty[i][m] = 1'b0;
+                valid[i][m] = 1'b0;
+            end
         end
+
         for(integer k = 0; k < LINE_SIZE; k++)
             mem_wr_line[k] <= 0;
         mem_wr_addr <= 0;
@@ -72,17 +136,17 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
         IDLE:       begin
                         if(cache_hit) begin
                             if(rd_req) begin    // 如果cache命中，并且是读请求，
-                                rd_data <= cache_mem[set_addr][line_addr];   //则直接从cache中取出要读的数据
+                                rd_data <= cache_mem[set_addr][way][line_addr];   //则直接从cache中取出要读的数据
                             end else if(wr_req) begin // 如果cache命中，并且是写请求，
-                                cache_mem[set_addr][line_addr] <= wr_data;   // 则直接向cache中写入数据
-                                dirty[set_addr] <= 1'b1;                     // 写数据的同时置脏位
+                                cache_mem[set_addr][line_addr][way] <= wr_data;   // 则直接向cache中写入数据
+                                dirty[set_addr][way] <= 1'b1;                     // 写数据的同时置脏位
                             end 
                         end else begin
                             if(wr_req | rd_req) begin   // 如果 cache 未命中，并且有读写请求，则需要进行换入
-                                if(valid[set_addr] & dirty[set_addr]) begin    // 如果 要换入的cache line 本来有效，且脏，则需要先将它换出
+                                if(valid[set_addr][out_way] & dirty[set_addr][out_way]) begin    // 如果 要换入的cache line 本来有效，且脏，则需要先将它换出
                                     cache_stat  <= SWAP_OUT;
-                                    mem_wr_addr <= {cache_tags[set_addr], set_addr};
-                                    mem_wr_line <= cache_mem[set_addr];
+                                    mem_wr_addr <= {cache_tags[set_addr][out_way], set_addr};
+                                    mem_wr_line <= cache_mem[set_addr][out_way];
                                 end else begin                                   // 反之，不需要换出，直接换入
                                     cache_stat  <= SWAP_IN;
                                 end
@@ -101,10 +165,10 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
                         end
                     end
         SWAP_IN_OK: begin           // 上一个周期换入成功，这周期将主存读出的line写入cache，并更新tag，置高valid，置低dirty
-                        for(integer i=0; i<LINE_SIZE; i++)  cache_mem[mem_rd_set_addr][i] <= mem_rd_line[i];
-                        cache_tags[mem_rd_set_addr] <= mem_rd_tag_addr;
-                        valid     [mem_rd_set_addr] <= 1'b1;
-                        dirty     [mem_rd_set_addr] <= 1'b0;
+                        for(integer i=0; i<LINE_SIZE; i++)  cache_mem[mem_rd_set_addr][way_out][i] <= mem_rd_line[i];
+                        cache_tags[mem_rd_set_addr][way_out] <= mem_rd_tag_addr;
+                        valid     [mem_rd_set_addr][way_out] <= 1'b1;
+                        dirty     [mem_rd_set_addr][way_out] <= 1'b0;
                         cache_stat <= IDLE;        // 回到就绪状态
                     end
         endcase
