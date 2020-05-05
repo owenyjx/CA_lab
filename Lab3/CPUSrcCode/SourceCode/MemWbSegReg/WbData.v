@@ -33,7 +33,7 @@
     // 无需修改
 
 module WB_Data_WB(
-    input wire clk, bubbleW, flushW,
+    input wire clk, bubbleW, flushW, rst, 
     input wire wb_select,
     input wire [2:0] load_type,
     input  [3:0] write_en, debug_write_en,
@@ -41,7 +41,8 @@ module WB_Data_WB(
     input  [31:0] debug_addr,
     input  [31:0] in_data, debug_in_data,
     output wire [31:0] debug_out_data,
-    output wire [31:0] data_WB
+    output wire [31:0] data_WB,
+    output wire miss
     );
 
     wire [31:0] data_raw;
@@ -62,7 +63,21 @@ module WB_Data_WB(
     );
 
 
-
+    cache #(
+    .LINE_ADDR_LEN  ( 3             ),
+    .SET_ADDR_LEN   ( 2             ),
+    .TAG_ADDR_LEN   ( 12            ),
+    .WAY_CNT        ( 3             )
+    ) cache_test_instance (
+    .clk            ( clk           ),
+    .rst            ( rst           ),
+    .miss           ( miss          ),
+    .addr           ( addr          ),
+    .rd_req         ( load_type[0]  ),
+    .rd_data        ( data_raw      ),
+    .wr_req         ( write_en      ),
+    .wr_data        ( in_data       )
+    );
 
 
 

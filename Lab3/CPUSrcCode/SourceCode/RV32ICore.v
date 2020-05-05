@@ -69,6 +69,7 @@ module RV32ICore(
     wire [11:0] csr_addr_dest_ID, csr_addr_dest_EX, csr_addr_dest_MEM, csr_addr_dest_WB;
     wire [2:0] csr_ALU_func_ID, csr_ALU_func_EX, csr_ALU_func_MEM, csr_ALU_func_WB;
 
+    wire miss;  //用来表示cache是否miss
 
 
 
@@ -399,11 +400,12 @@ module RV32ICore(
     // MEM stage
     // ---------------------------------------------
 
-
+    //lab3 加入了rst和miss
     WB_Data_WB WB_Data_WB1(
         .clk(CPU_CLK),
         .bubbleW(bubbleW),
         .flushW(flushW),
+        .rst(CPU_RST),
         .wb_select(wb_select_MEM),
         .load_type(load_type_MEM),
         .write_en(cache_write_en_MEM),
@@ -413,7 +415,8 @@ module RV32ICore(
         .in_data(reg2_MEM),
         .debug_in_data(CPU_Debug_DataCache_WD2),
         .debug_out_data(CPU_Debug_DataCache_RD2),
-        .data_WB(data_WB)
+        .data_WB(data_WB),
+        .miss(miss)
     );
 
 
@@ -457,6 +460,7 @@ module RV32ICore(
     // ---------------------------------------------
     HarzardUnit HarzardUnit1(
         .rst(CPU_RST),
+        .miss(miss),
         .reg1_srcD(inst_ID[19:15]),
         .reg2_srcD(inst_ID[24:20]),
         .reg1_srcE(reg1_src_EX),

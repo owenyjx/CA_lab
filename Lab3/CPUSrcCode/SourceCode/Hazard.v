@@ -49,7 +49,7 @@
 
 
 module HarzardUnit(
-    input wire rst,
+    input wire rst, miss,
     input wire [4:0] reg1_srcD, reg2_srcD, reg1_srcE, reg2_srcE, reg_dstE, reg_dstM, reg_dstW,
     input wire br, jalr, jal,
     input wire [1:0] src_reg_en,
@@ -116,6 +116,19 @@ module HarzardUnit(
             bubbleM = 1'b0;
             flushW = 1'b0;
             bubbleW = 1'b0;
+        end
+        else if(miss)   //加入cache miss的情况
+        begin
+            flushF = 1'b0;
+            bubbleF = 1'b1;
+            flushD = 1'b0;
+            bubbleD = 1'b1;
+            flushE = 1'b0;
+            bubbleE = 1'b1;
+            flushM = 1'b0;
+            bubbleM = 1'b1;
+            flushW = 1'b0;
+            bubbleW = 1'b1;
         end
         else 
         begin
