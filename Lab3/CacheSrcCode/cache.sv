@@ -51,14 +51,14 @@ wire mem_gnt;      // 主存响应读写的握手信号
 assign {unused_addr, tag_addr, set_addr, line_addr, word_addr} = addr;  // 拆分 32bit ADDR
 
 wire machanism; //用作选择替换策略
-assign machanism = FIFO;
-//assign machanism = LRU;
+//assign machanism = FIFO;
+assign machanism = LRU;
 reg cache_hit = 1'b0;
-reg way = 32'b0;
+integer way = 32'b0;
 reg [            WAY_CNT-1:0] FIFO_ways    [SET_SIZE]; //用来记录先后顺序
 reg [            WAY_CNT-1:0] LRU_ways    [SET_SIZE];
 reg [            WAY_CNT-1:0] way_out;  //用作确定换出的路
-int unsigned FIFO_Q[$:WAY_CNT];
+
 
 //加入并行判断，判断命中的是第几路
 
@@ -104,7 +104,7 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
                         if(cache_hit) begin
                             if(machanism == LRU) begin
                                 LRU_ways[set_addr] <= LRU_ways[set_addr] | (1 << way);
-                                if(~LRU_ways[set_addr] == 0)
+                                if(LRU_ways[set_addr] == {WAY_CNT{1'b1}})
                                     LRU_ways[set_addr] <= (1 << way);
                             end
                             if(rd_req) begin    // 如果cache命中，并且是读请求，
@@ -129,7 +129,7 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
 
                                     if(machanism == FIFO) begin    // 如果 要换入的cache line 本来有效，且脏，则需要先将它换出
                                         way_out <= FIFO_ways[set_addr];
-                                        FIFO_ways[set_addr] <= (FIFO_ways[set_addr] < WAY_CNT - 1) ? FIFO_ways[set_addr] + 1 : 0;
+                                        FIFO_ways[set_addr] <= (FIFO_ways[set_addr] < WAY_CNT - 1 ) ? FIFO_ways[set_addr] + 1 : 0;
                                         if(dirty[set_addr][FIFO_ways[set_addr]]) begin
                                             cache_stat  <= SWAP_OUT;
                                             mem_wr_addr <= {cache_tags[set_addr][FIFO_ways[set_addr]], set_addr};
@@ -139,8 +139,8 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
                                                 cache_stat <= SWAP_IN;
                                         end 
                                     end 
-                                    else begin   
-                                        for(integer i = 0; i < SET_SIZE; i++) begin
+                                    else if(machanism == LRU) begin   
+                                        for(integer i = 0; i < WAY_CNT; i++) begin
                                             if(LRU_ways[set_addr] & (1 << i) == 0) begin
                                                 way_out <= i;
                                                 if(dirty[set_addr][i]) begin
@@ -149,7 +149,7 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
                                                     mem_wr_line <= cache_mem[set_addr][i];
                                                 end
                                                 else begin 
-                                                cache_stat <= SWAP_IN;
+                                                    cache_stat <= SWAP_IN;
                                                 end 
                                                 break;
                                             end
