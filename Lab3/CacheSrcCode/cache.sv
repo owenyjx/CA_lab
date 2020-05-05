@@ -102,10 +102,11 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
         case(cache_stat)
         IDLE:       begin
                         if(cache_hit) begin
-                            if(machanism == LRU) begin
-                                LRU_ways[set_addr] <= LRU_ways[set_addr] | (1 << way);
-                                if(LRU_ways[set_addr] == {WAY_CNT{1'b1}})
+                            if(machanism == LRU ) begin
+                                if(LRU_ways[set_addr] | (1 << way) == {WAY_CNT{1'b1}})
                                     LRU_ways[set_addr] <= (1 << way);
+                                else 
+                                    LRU_ways[set_addr] <= LRU_ways[set_addr] | (1 << way);
                             end
                             if(rd_req) begin    // 如果cache命中，并且是读请求，
                                 rd_data <= cache_mem[set_addr][way][line_addr];   //则直接从cache中取出要读的数据
@@ -139,9 +140,9 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
                                                 cache_stat <= SWAP_IN;
                                         end 
                                     end 
-                                    else if(machanism == LRU) begin   
+                                    else if(machanism == LRU)begin   
                                         for(integer i = 0; i < WAY_CNT; i++) begin
-                                            if(LRU_ways[set_addr] & (1 << i) == 0) begin
+                                            if(LRU_ways[set_addr][i] == 0) begin
                                                 way_out <= i;
                                                 if(dirty[set_addr][i]) begin
                                                     cache_stat  <= SWAP_OUT;
