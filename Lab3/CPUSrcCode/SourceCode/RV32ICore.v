@@ -70,7 +70,15 @@ module RV32ICore(
     wire [2:0] csr_ALU_func_ID, csr_ALU_func_EX, csr_ALU_func_MEM, csr_ALU_func_WB;
 
     wire miss;  //用来表示cache是否miss
-
+    integer miss_cnt=0;
+    integer hit_cnt=0;
+    always@(miss)
+    begin
+        if(miss)
+            miss_cnt = miss_cnt+1;
+        if(!miss)
+            hit_cnt = hit_cnt + 1;
+    end
 
 
     // Adder to compute PC + 4

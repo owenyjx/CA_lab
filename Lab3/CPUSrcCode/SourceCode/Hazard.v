@@ -79,6 +79,19 @@ module HarzardUnit(
             flushW = 1'b1;
             bubbleW = 1'b0;
         end
+        else if(miss)   //加入cache miss的情况
+        begin
+            flushF = 1'b0;
+            bubbleF = 1'b1;
+            flushD = 1'b0;
+            bubbleD = 1'b1;
+            flushE = 1'b0;
+            bubbleE = 1'b1;
+            flushM = 1'b0;
+            bubbleM = 1'b1;
+            flushW = 1'b0;
+            bubbleW = 1'b1;
+        end
         else if((src_reg_en[1] == 1'b1 && reg1_srcD == reg_dstE && reg1_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1) || (src_reg_en[0] == 1'b1 && reg2_srcD == reg_dstE && reg2_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1))
         begin
             flushF = 1'b0;
@@ -117,19 +130,7 @@ module HarzardUnit(
             flushW = 1'b0;
             bubbleW = 1'b0;
         end
-        else if(miss)   //加入cache miss的情况
-        begin
-            flushF = 1'b0;
-            bubbleF = 1'b1;
-            flushD = 1'b0;
-            bubbleD = 1'b1;
-            flushE = 1'b0;
-            bubbleE = 1'b1;
-            flushM = 1'b0;
-            bubbleM = 1'b1;
-            flushW = 1'b0;
-            bubbleW = 1'b1;
-        end
+        
         else 
         begin
             flushF = 1'b0;

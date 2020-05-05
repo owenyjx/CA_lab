@@ -56,14 +56,14 @@ module WB_Data_WB(
     cache #(
     .LINE_ADDR_LEN  ( 3             ),
     .SET_ADDR_LEN   ( 2             ),
-    .TAG_ADDR_LEN   ( 12            ),
+    .TAG_ADDR_LEN   ( 6            ),
     .WAY_CNT        ( 3             )
     ) cache_test_instance (
     .clk            ( clk           ),
     .rst            ( rst           ),
     .miss           ( miss          ),
     .addr           ( addr          ),
-    .rd_req         ( load_type[0]  ),
+    .rd_req         ( load_type[0]   ),
     .rd_data        ( data_raw      ),
     .wr_req         ( write_en      ),
     .wr_data        ( in_data       )

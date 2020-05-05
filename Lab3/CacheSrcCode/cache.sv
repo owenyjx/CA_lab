@@ -51,8 +51,8 @@ wire mem_gnt;      // 主存响应读写的握手信号
 assign {unused_addr, tag_addr, set_addr, line_addr, word_addr} = addr;  // 拆分 32bit ADDR
 
 wire machanism; //用作选择替换策略
-//assign machanism = FIFO;
-assign machanism = LRU;
+assign machanism = FIFO;
+//assign machanism = LRU;
 reg cache_hit = 1'b0;
 integer way = 32'b0;
 reg [            WAY_CNT-1:0] FIFO_ways    [SET_SIZE]; //用来记录先后顺序
