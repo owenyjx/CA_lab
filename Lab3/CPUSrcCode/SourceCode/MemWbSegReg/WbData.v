@@ -50,17 +50,7 @@ module WB_Data_WB(
 
 
 
-    DataCache DataCache1(
-        .clk(clk),
-        .write_en(write_en << addr[1:0]),
-        .debug_write_en(debug_write_en),
-        .addr(addr[31:2]),
-        .debug_addr(debug_addr[31:2]),
-        .in_data(in_data << (8 * addr[1:0])),
-        .debug_in_data(debug_in_data),
-        .out_data(data_raw),
-        .debug_out_data(debug_out_data)
-    );
+   
 
 
     cache #(
