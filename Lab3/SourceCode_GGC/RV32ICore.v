@@ -11,9 +11,9 @@
 
 
 //功能说明
-    // RV32I Core的顶层模�?
+    // RV32I Core的顶层模�?
 //实验要求  
-    // 添加CSR指令的数据�?�路和相应部�?
+    // 添加CSR指令的数据�?�路和相应部�?
 
 module RV32ICore(
     input wire CPU_CLK,
@@ -60,6 +60,7 @@ module RV32ICore(
     wire [31:0] result, result_MEM;
     wire [1:0] op1_sel, op2_sel, reg2_sel;
 
+    wire miss;
 
 
 
@@ -339,6 +340,7 @@ module RV32ICore(
 
     WB_Data_WB WB_Data_WB1(
         .clk(CPU_CLK),
+        .rst(CPU_RST),
         .bubbleW(bubbleW),
         .flushW(flushW),
         .wb_select(wb_select_MEM),
@@ -350,7 +352,8 @@ module RV32ICore(
         .in_data(reg2_MEM),
         .debug_in_data(CPU_Debug_DataCache_WD2),
         .debug_out_data(CPU_Debug_DataCache_RD2),
-        .data_WB(data_WB)
+        .data_WB(data_WB),
+        .miss(miss)
     );
 
 
@@ -382,6 +385,7 @@ module RV32ICore(
     // ---------------------------------------------
     HarzardUnit HarzardUnit1(
         .rst(CPU_RST),
+        .miss(miss),
         .reg1_srcD(inst_ID[19:15]),
         .reg2_srcD(inst_ID[24:20]),
         .reg1_srcE(reg1_src_EX),

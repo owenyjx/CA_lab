@@ -49,7 +49,7 @@
 
 
 module HarzardUnit(
-    input wire rst,
+    input wire rst,miss,
     input wire [4:0] reg1_srcD, reg2_srcD, reg1_srcE, reg2_srcE, reg_dstE, reg_dstM, reg_dstW,
     input wire br, jalr, jal,
     input wire [1:0] src_reg_en,
@@ -87,7 +87,15 @@ module HarzardUnit(
 
     always @ (*)//再判断bubble
     begin
-        if (rst) 
+        if(miss)
+        begin
+            bubbleF <= 1;
+            bubbleD <= 1;
+            bubbleE <= 1;
+            bubbleM <= 1;
+            bubbleW <= 1;
+        end
+        else if (rst) 
         begin
             bubbleF <= 0;
             bubbleD <= 0;
