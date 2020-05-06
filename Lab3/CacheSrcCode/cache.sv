@@ -51,8 +51,8 @@ wire mem_gnt;      // 主存响应读写的握手信号
 assign {unused_addr, tag_addr, set_addr, line_addr, word_addr} = addr;  // 拆分 32bit ADDR
 
 wire machanism; //用作选择替换策略
-assign machanism = FIFO;
-//assign machanism = LRU;
+//assign machanism = FIFO;
+assign machanism = LRU;
 reg cache_hit = 1'b0;
 integer way = 32'b0;
 reg [            WAY_CNT-1:0] FIFO_ways    [SET_SIZE]; //用来记录先后顺序
@@ -60,13 +60,14 @@ reg [            WAY_CNT-1:0] LRU_ways    [SET_SIZE];
 reg [            WAY_CNT-1:0] way_out;  //用作确定换出的路
 
 
+
 //加入并行判断，判断命中的是第几路
 
 
-always @ (*) begin              // ?? ???address ??? cache ???
+always @ (*) begin              
     cache_hit = 1'b0;
     for (integer i = 0; i < WAY_CNT; i++) begin
-        if(valid[set_addr][i] && cache_tags[set_addr][i] == tag_addr) begin   // ?? cache line?????tag???????tag??????
+        if(valid[set_addr][i] && cache_tags[set_addr][i] == tag_addr) begin  
             cache_hit = 1'b1;
             way = i;
             break;
@@ -75,7 +76,9 @@ always @ (*) begin              // ?? ???address ??? cache ???
 end
 
 
-
+//hit_cnt;
+integer hit_CNT=0;
+integer miss_CNT=0;
 
 
 
@@ -102,6 +105,7 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
         case(cache_stat)
         IDLE:       begin
                         if(cache_hit) begin
+                            hit_CNT = hit_CNT + 1;
                             if(machanism == LRU ) begin
                                 if(LRU_ways[set_addr] | (1 << way) == {WAY_CNT{1'b1}})
                                     LRU_ways[set_addr] <= (1 << way);
@@ -115,6 +119,7 @@ always @ (posedge clk or posedge rst) begin     // ?? cache ???
                                 dirty[set_addr][way] <= 1'b1;                     // 写数据的同时置脏位
                             end 
                         end else begin
+                            miss_CNT = miss_CNT + 1;
                             if(wr_req | rd_req) begin   // 如果 cache 未命中，并且有读写请求，则需要进行换入
 
                                 if (valid[set_addr] != {WAY_CNT{1'b1}}) begin 

@@ -53,7 +53,6 @@ module HarzardUnit(
     input wire [4:0] reg1_srcD, reg2_srcD, reg1_srcE, reg2_srcE, reg_dstE, reg_dstM, reg_dstW,
     input wire br, jalr, jal,
     input wire [1:0] src_reg_en,
-    input wire [1:0] src_reg_en_ID,
     input wire wb_select,
     input wire reg_write_en_MEM,
     input wire reg_write_en_WB,
@@ -63,117 +62,129 @@ module HarzardUnit(
     output reg [1:0] op1_sel, op2_sel, reg2_sel
     );
 
-    // TODO: Complete this module   
-
-    always @ (*)//先判断flush
+    // TODO: Complete this module
+    initial
     begin
-        if (rst) 
-        begin
-            flushF <= 1;
-            flushD <= 1;
-            flushE <= 1;
-            flushM <= 1;
-            flushW <= 1;
-        end
-        else
-        begin
-            flushF <= 0;
-            flushD <= (br || jal || jalr);
-            flushE <= (br || jalr);
-            flushM <= 0;
-            flushW <= 0;
-        end
+        flushF <= 1;
+        bubbleF <= 0;
+        flushD <= 1;
+        bubbleD <= 0;
+        flushE <= 1;
+        bubbleE <= 0;
+        flushM <= 1;
+        bubbleM <= 0;
+        flushW <= 1;
+        bubbleW <= 0;
     end
 
-    always @ (*)//再判断bubble
+
+    always@(*)
     begin
-        if(miss)
+        if(rst)
         begin
-            bubbleF <= 1;
-            bubbleD <= 1;
-            bubbleE <= 1;
-            bubbleM <= 1;
-            bubbleW <= 1;
-        end
-        else if (rst) 
-        begin
+            flushF <= 0;
             bubbleF <= 0;
+            flushD <= 0;
             bubbleD <= 0;
+            flushE <= 0;
             bubbleE <= 0;
+            flushM <= 0;
             bubbleM <= 0;
+            flushW <= 0;
             bubbleW <= 0;
         end
         else
+        begin
+            //flush
+            if(br || jalr)
             begin
-                bubbleF <= (((src_reg_en_ID[1] == 1 && reg1_srcD == reg_dstE) || (src_reg_en_ID[0] == 1 && reg2_srcD == reg_dstE)) && wb_select);//wb_select_EX                                                  
-                bubbleD <= (((src_reg_en_ID[1] == 1 && reg1_srcD == reg_dstE) || (src_reg_en_ID[0] == 1 && reg2_srcD == reg_dstE)) && wb_select);//wb_select_EX
+                flushF <= 0;
+                flushD <= 1;
+                flushE <= 1;
+                flushM <= 0;
+                flushW <= 0; 
+            end
+            else if(jal)
+            begin
+                flushF <= 0;
+                flushD <= 1;
+                flushE <= 0;
+                flushM <= 0;
+                flushW <= 0;
+            end
+            else if(wb_select == 1 && ( reg1_srcD==reg_dstE || reg2_srcD==reg_dstE))
+            begin
+                flushF <= 0;
+                flushD <= 0;
+                flushE <= 1;
+                flushM <= 0;
+                flushW <= 0;   
+            end
+            else
+            begin
+                flushF <= 0;
+                flushD <= 0;
+                flushE <= 0;
+                flushM <= 0;
+                flushW <= 0;   
+            end
+            
+            //bubble
+            if(miss)
+            begin
+                bubbleF <= 1;
+                bubbleD <= 1;
+                bubbleE <= 1;
+                bubbleM <= 1;
+                bubbleW <= 1;
+            end
+            else if(wb_select == 1 && ( reg1_srcD==reg_dstE || reg2_srcD==reg_dstE))
+            begin
+                bubbleF <= 1;
+                bubbleD <= 1;
                 bubbleE <= 0;
                 bubbleM <= 0;
                 bubbleW <= 0;
+            end
+            else
+            begin
+                bubbleF <= 0;
+                bubbleD <= 0;
+                bubbleE <= 0;
+                bubbleM <= 0;
+                bubbleW <= 0;
+            end
+            
+            //op1_sel
+            if(alu_src1 == 1)
+                op1_sel <= 2'b10;
+            else if(reg1_srcE == reg_dstM && reg_write_en_MEM==1 && src_reg_en[1]==1 && reg_dstM!=5'd0)
+                op1_sel <= 2'b00;
+            else if(reg1_srcE == reg_dstW && reg_write_en_WB==1 && src_reg_en[1]==1 && reg_dstW!=5'd0)
+                op1_sel <= 2'b01;
+            else
+                op1_sel <= 2'b11;
+            
+            //op2_sel
+            if(alu_src2 == 2'b01)
+                op2_sel <= 2'b10;
+            else if(alu_src2 == 2'b10)
+                op2_sel <= 2'b11;
+            else if(reg2_srcE == reg_dstM && reg_write_en_MEM==1 && src_reg_en[0]==1 && reg_dstM!=5'd0)
+                op2_sel <= 2'b00;
+            else if(reg2_srcE == reg_dstW && reg_write_en_WB==1 && src_reg_en[0]==1 && reg_dstW!=5'd0)
+                op2_sel <= 2'b01;
+            else
+                op2_sel <= 2'b11;
+                
+            //reg2_sel
+            if(reg2_srcE == reg_dstM && reg_write_en_MEM==1 && reg_dstM!=5'd0)
+                reg2_sel <= 2'b00;
+            else if(reg2_srcE == reg_dstW && reg_write_en_WB==1 && reg_dstW!=5'd0)
+                reg2_sel <= 2'b01;
+            else
+                reg2_sel <= 2'b10;
         end
     end
-
     
-    always @ (*)//最后处理旁路
-    begin
-        if (rst) 
-        begin
-            op1_sel <= 2'b11;
-            op2_sel <= 2'b11;
-            reg2_sel <= 2'b10;
-        end
-        else
-        begin
-        //op1_sel
-        if (src_reg_en[1] == 1 
-            && reg_write_en_MEM
-            && reg1_srcE != 5'b0   //不是空指令
-            && reg1_srcE == reg_dstM   //MEM->EX
-            )   
-            op1_sel <= 2'b00;  //2'b00表示来自ALU转发数据
-        else if (src_reg_en[1] == 1 
-                 && reg_write_en_WB
-                 && reg1_srcE != 5'b0 
-                 && reg1_srcE == reg_dstW   //WB->EX
-                 ) 
-            op1_sel <= 2'b01;  //2'b01表示来自write back data转发
-        else if (src_reg_en[1] == 0 
-                 && alu_src1 == 1) 
-            op1_sel <= 2'b10;  //2'b10表示来自PC
-        else
-            op1_sel <= 2'b11;
-        //op2_sel
-        if (src_reg_en[0] == 1
-            && reg_write_en_MEM 
-            && reg2_srcE != 5'b0 
-            && reg2_srcE == reg_dstM   //MEM->EX
-            )    
-            op2_sel <= 2'b00;
-        else if (src_reg_en[0] == 1 
-                 && reg_write_en_WB
-                 && reg2_srcE != 5'b0 
-                 && reg2_srcE == reg_dstW  //WB->EX
-                 ) 
-            op2_sel <= 2'b01;
-        else if (src_reg_en[0] == 0 
-                 && alu_src2 == 2'b01)  //ALU操作数2来源：2'b01表示来自reg2地址
-            op2_sel <= 2'b10;  //2'b10表示来自reg2地址
-        else
-            op2_sel <= 2'b11;
-        //reg2_sel
-        if (reg_write_en_MEM
-            && reg2_srcE != 5'b0 
-            && reg2_srcE == reg_dstM   //MEM->EX 
-            )   
-            reg2_sel <= 2'b00;
-        else if (reg_write_en_WB
-                 && reg2_srcE != 5'b0 
-                 && reg2_srcE == reg_dstW  //WB->EX 
-                 ) 
-            reg2_sel <= 2'b01;
-        else
-            reg2_sel <= 2'b10; 
-        end
-    end
-
 endmodule

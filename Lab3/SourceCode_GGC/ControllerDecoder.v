@@ -192,7 +192,7 @@ module ControllerDecoder(
     always@(*)
     begin
         case(inst[6:0])
-            7'b1101111 : cache_write_en <= 4'b0000//jal
+            7'b1101111 : cache_write_en <= 4'b0000;//jal
             7'b1100111 : cache_write_en <= 4'b0000;//jalr        
             7'b0000011 : cache_write_en <= 4'b0000;//load
             7'b0100011 :begin                  //store

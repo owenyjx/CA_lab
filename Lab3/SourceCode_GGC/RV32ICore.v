@@ -61,6 +61,22 @@ module RV32ICore(
     wire [1:0] op1_sel, op2_sel, reg2_sel;
 
     wire miss;
+    integer miss_cnt=0;
+    integer access_cnt=0;
+    
+    always@ (load_type_MEM or cache_write_en_MEM)
+    begin
+        if(load_type_MEM != 3'b0  || cache_write_en_MEM != 4'b0)
+        begin
+            access_cnt = access_cnt + 1;
+        end
+    end
+
+    always @ (miss)
+    begin
+        if(miss)
+            miss_cnt = miss_cnt + 1;
+    end
 
 
 
@@ -396,7 +412,6 @@ module RV32ICore(
         .br(br),
         .jalr(jalr_EX),
         .jal(jal),
-        .src_reg_en_ID(src_reg_en_ID),
         .src_reg_en(src_reg_en_EX),
         .wb_select(wb_select_EX),
         .reg_write_en_MEM(reg_write_en_MEM),

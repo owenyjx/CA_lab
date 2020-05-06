@@ -1,3 +1,4 @@
+`timescale 1ns / 1ps
 // asm file name: QuickSort.S
 module InstructionCache(
     input wire clk,
