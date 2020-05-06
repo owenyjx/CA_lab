@@ -63,9 +63,9 @@ module WB_Data_WB(
     .rst            ( rst           ),
     .miss           ( miss          ),
     .addr           ( addr        ),
-    .rd_req         ( load_type[0]      ),
+    .rd_req         ( load_type !=3'b0     ),
     .rd_data        ( data_raw      ),
-    .wr_req         ( write_en[0]    ),
+    .wr_req         ( write_en!=4'b0   ),
     .wr_data        (   in_data    )
     );
 
