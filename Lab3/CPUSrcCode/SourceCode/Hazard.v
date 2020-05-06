@@ -92,7 +92,7 @@ module HarzardUnit(
             flushW = 1'b0;
             bubbleW = 1'b1;
         end
-        else if((src_reg_en[1] == 1'b1 && reg1_srcD == reg_dstE && reg1_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1) || (src_reg_en[0] == 1'b1 && reg2_srcD == reg_dstE && reg2_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1))
+        else if (!miss && ((src_reg_en[1] == 1'b1 && reg1_srcD == reg_dstE && reg1_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1) || (src_reg_en[0] == 1'b1 && reg2_srcD == reg_dstE && reg2_srcD != 5'b0 && reg_write_en_MEM == 1'b1 && wb_select == 1'b1)))
         begin
             flushF = 1'b0;
             bubbleF = 1'b1;
@@ -104,7 +104,7 @@ module HarzardUnit(
             bubbleM = 1'b0;
             flushW = 1'b0;
         end
-        else if(jalr == 1'b1 || br == 1'b1)
+        else if (!miss &&(jalr == 1'b1 || br == 1'b1))
         begin
             flushF = 1'b0;
             bubbleF = 1'b0;
@@ -117,7 +117,7 @@ module HarzardUnit(
             flushW = 1'b0;
             bubbleW = 1'b0;
         end
-        else if(jal == 1'b1)
+        else if(!miss && jal == 1'b1)
         begin
             flushF = 1'b0;
             bubbleF = 1'b0;

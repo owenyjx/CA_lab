@@ -62,11 +62,11 @@ module WB_Data_WB(
     .clk            ( clk           ),
     .rst            ( rst           ),
     .miss           ( miss          ),
-    .addr           ( addr          ),
-    .rd_req         ( load_type[0]   ),
+    .addr           ( addr        ),
+    .rd_req         ( load_type[0]      ),
     .rd_data        ( data_raw      ),
-    .wr_req         ( write_en      ),
-    .wr_data        ( in_data       )
+    .wr_req         ( write_en[0]    ),
+    .wr_data        (   in_data    )
     );
 
 
