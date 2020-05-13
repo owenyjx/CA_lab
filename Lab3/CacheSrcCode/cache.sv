@@ -1,10 +1,10 @@
 
 
 module cache #(
-    parameter  LINE_ADDR_LEN = 3, // line内地址长度，决定了每个line具有2^3个word
-    parameter  SET_ADDR_LEN  = 3, // 组地址长度，决定了一共有2^3=8组
+    parameter  LINE_ADDR_LEN = 4, // line内地址长度，决定了每个line具有2^3个word
+    parameter  SET_ADDR_LEN  = 1, // 组地址长度，决定了一共有2^3=8组
     parameter  TAG_ADDR_LEN  = 6, // tag长度
-    parameter  WAY_CNT       = 3, // 组相连度，决定了每组中有多少路line，这里是直接映射型cache，因此该参数没用到
+    parameter  WAY_CNT       = 2, // 组相连度，决定了每组中有多少路line，这里是直接映射型cache，因此该参数没用到
     parameter  LRU           = 1, //LRU策略   
     parameter  FIFO          = 0  //FIFO策略
 )(
@@ -26,8 +26,8 @@ localparam SET_SIZE        = 1 << SET_ADDR_LEN   ;         // 计算一共有多
 //加入每一组路数的维度
 reg [            31:0] cache_mem    [SET_SIZE][WAY_CNT][LINE_SIZE]; // SET_SIZE个line，每个line有LINE_SIZE个word
 reg [TAG_ADDR_LEN-1:0] cache_tags   [SET_SIZE][WAY_CNT];            // SET_SIZE个TAG
-reg                    valid        [SET_SIZE][WAY_CNT];            // SET_SIZE个valid(有效位)
-reg                    dirty        [SET_SIZE][WAY_CNT];            // SET_SIZE个dirty(脏位)
+reg   [WAY_CNT-1:0]                 valid        [SET_SIZE];            // SET_SIZE个valid(有效位)
+reg      [WAY_CNT-1:0]              dirty        [SET_SIZE];            // SET_SIZE个dirty(脏位)
 
 wire [              2-1:0]   word_addr;                   // 将输入地址addr拆分成这5个部分
 wire [  LINE_ADDR_LEN-1:0]   line_addr;
