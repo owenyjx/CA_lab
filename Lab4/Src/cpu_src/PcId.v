@@ -34,7 +34,7 @@ module PC_ID(
     initial 
     begin
         PC_ID = 0;
-        predict_br_IF = 0;
+        predict_br_ID = 0;
     end
     
     always@(posedge clk)
@@ -43,7 +43,7 @@ module PC_ID(
             if (flushD)
             begin
                 PC_ID <= 0;
-                predict_br_IF <= 0;
+                predict_br_ID <= 0;
             end
             else 
             begin

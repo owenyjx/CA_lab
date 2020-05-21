@@ -29,13 +29,13 @@
 
 module NPC_Generator(
     input wire [31:0] PC, jal_target, jalr_target, br_target, PC_4,
-    input wire jal, jalr, br, predict_not_jump_miss, predict_jump_miss
+    input wire jal, jalr, br, predict_not_jump_miss, predict_jump_miss,
     output reg [31:0] NPC
     );
     always@(*)
     begin
         if(predict_not_jump_miss == 1) NPC <= br_target;
-        else if(predict_jump_miss) NPC <= PC_4;
+        else if(predict_jump_miss == 1) NPC <= PC_4;
         else if(jalr == 1) NPC <= jalr_target;
         else if(jal == 1) NPC <= jal_target;
         else NPC <= PC; 

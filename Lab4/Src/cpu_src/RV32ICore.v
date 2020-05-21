@@ -63,21 +63,30 @@ module RV32ICore(
 
     //add branch prediction
     integer i, index;
-    reg [32:0] PC_buffer [29:0];
+    reg [32:0] PC_buffer [1 << 16 - 1 : 0];
     wire [31:0] target_pc_IF, target_pc_ID, target_pc_EX;
     wire predict_br_IF,predict_br_ID, predict_br_EX;
-    wire predict_miss;
+    wire predict_not_jump_miss, predict_jump_miss;
     
+
+    initial
+    begin
+        for (integer i=0; i < 10000;i= i+1)
+        begin
+            PC_buffer[i] = 0;
+        end
+
+    end
+
     assign predict_br_IF = (PC_buffer[PC_IF][0] == 1'b1) ? 1 : 0; 
-    assign target_pc_IF = (PC_buffer[PC_IF][0] == 1'b1) ? PC_buffer[PC_IF][32:1] : PC_IF + 4;
+    assign target_pc_IF = (CPU_RST)? 0:(PC_buffer[PC_IF][0] == 1'b1) ? PC_buffer[PC_IF][32:1] : PC_IF + 4;
 
     always @(posedge CPU_CLK)
     begin
-        if(rst)
+        if(CPU_RST)
         begin
-            for(i = 0; i < 8; i++)begin
-                PC_buffer[i] = 65{1'b0};
-            end
+                PC_buffer[0] = {65{ 1'b0}};
+            
         end
         else if(predict_br_EX == 0) //不再buffer中，但需要跳转
         begin
@@ -94,7 +103,7 @@ module RV32ICore(
         begin
             if(br == 0)
             begin
-                PC_buffer[PC_EX - 4][0] == 1'b0;
+                PC_buffer[PC_EX - 4][0] = 1'b0;
             end
             else 
             begin
@@ -103,8 +112,8 @@ module RV32ICore(
         end
     end
     
-    assign predict_not_jump_miss = (predict_br_EX != 0 && br == 0 ) ? 1:0;
-    assign predict_jump_miss = (predict_br_EX == 0 && br == 1 ) ? 1:0;
+    assign predict_not_jump_miss = (predict_br_EX == 0 && br == 1 ) ? 1:0;
+    assign predict_jump_miss = (predict_br_EX != 0 && br == 0 ) ? 1:0;
 
 
 
@@ -171,7 +180,7 @@ module RV32ICore(
         .jal_target(jal_target),
         .jalr_target(ALU_out),
         .br_target(br_target),
-        .PC_4(PC_EX + 4)
+        .PC_4(PC_EX),
         .jal(jal),
         .jalr(jalr_EX),
         .br(br),
