@@ -37,7 +37,7 @@ module NPC_Generator(
     begin
         if(PC_control == 3'b011 || PC_control == 3'b001) NPC <= br_target;
         else if(PC_control == 3'b110) NPC <= PC_4;
-        else if(PC_control == 3'b101) NPC <= buff;
+        else if(PC_control == 3'b101) NPC <= br_target;
         else if(jalr == 1) NPC <= jalr_target;
         else if(jal == 1) NPC <= jal_target;
         else NPC <= PC; 

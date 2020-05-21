@@ -28,7 +28,7 @@ module PC_EX(
     input wire [31:0] PC_ID,
     input wire predict_br_ID,
     input wire BHT_predict_ID,
-    output wire BHT_predict_EX,
+    output reg BHT_predict_EX,
     output reg predict_br_EX,
     output reg [31:0] PC_EX
     );

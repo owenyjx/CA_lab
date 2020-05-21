@@ -97,7 +97,7 @@ module HarzardUnit(
         else
         begin
             //flush
-            if(jalr || PC_control = 3'b110 || PC_control = 3'b101 || PC_control = 3'b011 || PC_control = 3'b001)
+            if(jalr || PC_control == 3'b110 || PC_control == 3'b101 || PC_control == 3'b011 || PC_control == 3'b001)
             begin
                 flushF <= 0;
                 flushD <= 1;
