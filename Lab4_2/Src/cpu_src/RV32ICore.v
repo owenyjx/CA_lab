@@ -63,8 +63,8 @@ module RV32ICore(
 
     //add branch prediction
     integer i, index;
-    reg [32:0] PC_buffer [1 << 16 - 1 : 0];
-    reg [1:0] BHT [1 << 16 - 1 : 0];
+    reg [32:0] PC_buffer [1 << 10 - 1 : 0];
+    reg [1:0] BHT [1 << 10 - 1 : 0];
     wire [31:0] target_pc_IF, target_pc_ID, target_pc_EX;
     wire predict_br_IF,predict_br_ID, predict_br_EX;
     wire predict_not_jump_miss, predict_jump_miss;
@@ -124,7 +124,23 @@ module RV32ICore(
     wire miss;
     integer miss_cnt=0;
     integer access_cnt=0;
+    integer predict_wrong_cnt=0;
+    integer predict_cnt=0;
+    integer br_cnt=0;
+
     
+
+
+    always@(br_type_EX)
+    begin
+        if(br_type_EX != 0)
+            br_cnt = br_cnt + 1;
+        if(br_type_EX != 0 && (PC_control == 3'b111 || PC_control == 3'b100 || PC_control == 3'b010 || PC_control == 3'b000))
+        begin
+            predict_cnt = predict_cnt + 1;
+        end
+    end
+
     always@ (load_type_MEM or cache_write_en_MEM)
     begin
         if(load_type_MEM != 3'b0  || cache_write_en_MEM != 4'b0)
